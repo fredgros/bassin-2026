@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bassin d'Arcachon — Juin 2026</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: #f5f3ff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.card {
+  background: white; border-radius: 16px; padding: 28px 24px;
+  box-shadow: 0 4px 24px rgba(103,73,255,0.12); max-width: 420px; width: 100%;
+}
+.logo { width: 48px; height: 48px; background: #6749FF; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+.logo svg { width: 28px; height: 28px; fill: white; }
+h1 { font-size: 22px; font-weight: 800; color: #1a1a1a; text-align: center; margin-bottom: 4px; }
+.sub { font-size: 13px; color: #888; text-align: center; margin-bottom: 28px; }
+.btn {
+  display: block; width: 100%; padding: 16px 20px; border-radius: 14px;
+  text-decoration: none; margin-bottom: 12px; transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.98); }
+.btn-cf { background: #6749FF; color: white; }
+.btn-ar { background: #C41D3E; color: white; }
+.btn-title { font-size: 16px; font-weight: 700; display: block; margin-bottom: 3px; }
+.btn-sub { font-size: 12px; opacity: 0.8; display: block; }
+.info { margin-top: 20px; background: #f8f7ff; border-radius: 10px; padding: 14px; font-size: 12px; color: #666; line-height: 1.7; }
+.info strong { color: #6749FF; }
+.badge { display: inline-block; background: #ffe8ed; color: #C41D3E; border-radius: 6px; padding: 2px 7px; font-size: 11px; font-weight: 700; margin-right: 4px; }
+.badge-g { background: #e6f5f0; color: #0B7A5F; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+  </div>
+  <h1>Bassin d'Arcachon</h1>
+  <div class="sub">29 juin – 5 juillet 2026 · Frédéric, Élise & famille</div>
+
+  <a href="cap-ferret.html" class="btn btn-cf">
+    <span class="btn-title">Cap Ferret</span>
+    <span class="btn-sub">Villa Collette · 29 juin – 4 juillet · 20 adresses + 6 balades</span>
+  </a>
+
+  <a href="arcachon.html" class="btn btn-ar">
+    <span class="btn-title">Arcachon</span>
+    <span class="btn-sub">Haitza · 4 – 5 juillet · 8 adresses + 4 activités</span>
+  </a>
+
+  <div class="info">
+    <strong>Sur chaque carte</strong><br>
+    <span class="badge">Restaurants</span> et <span class="badge badge-g">Balades</span> filtrables séparément.<br>
+    Cliquez sur un marqueur pour le descriptif complet, les distances à vélo et l'itinéraire conseillé depuis l'hotel.
+    <br><br>
+    <strong>Top 10 immanquables</strong> : Chez Hortense · L'Escale · Pinasse Café · Chai Bertrand · Chai Anselme · Emile et Une Huitre · Le Bouchon du Ferret · La Chapelle · Diego Plage · Le Chipiron
+  </div>
+</div>
+</body>
+</html>
