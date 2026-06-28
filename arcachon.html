@@ -2,261 +2,248 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Arcachon — Restaurants & Balades</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Arcachon / Pyla — Restaurants & Balades</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, 'Segoe UI', Arial, sans-serif; background: #f5f3ff; overflow: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
 #header {
-  background: #6749FF; color: white; padding: 10px 16px;
+  background: #C41D3E; color: white; padding: 10px 16px;
   display: flex; align-items: center; justify-content: space-between;
-  position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2000; height: 46px;
 }
-#header h1 { font-size: 15px; font-weight: 700; }
-#header span { font-size: 11px; opacity: 0.8; }
-#map { position: fixed; top: 46px; left: 0; right: 0; bottom: 60px; z-index: 1; }
+#header h1 { font-size: 14px; font-weight: 700; }
+#header a { color: rgba(255,255,255,0.75); font-size: 11px; text-decoration: none; }
+#map { position: fixed; top: 46px; left: 0; right: 0; bottom: 58px; }
 #filter-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
-  background: white; border-top: 1px solid #e8e6ff;
+  position: fixed; bottom: 0; left: 0; right: 0; height: 58px;
+  background: white; border-top: 1px solid #ede9ff;
   display: flex; align-items: center; justify-content: center;
-  gap: 10px; padding: 0 16px; z-index: 2000;
-  box-shadow: 0 -2px 12px rgba(103,73,255,0.10);
+  gap: 8px; padding: 0 12px; z-index: 2000;
+  box-shadow: 0 -2px 10px rgba(103,73,255,0.10);
 }
-.filter-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 20px; border: 2px solid;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all 0.18s; white-space: nowrap; background: white;
-  -webkit-tap-highlight-color: transparent;
+.fbtn {
+  display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center;
+  padding: 7px 10px; border-radius: 18px; border: 2px solid;
+  font-size: 12px; font-weight: 700; cursor: pointer; background: white;
+  max-width: 130px; -webkit-tap-highlight-color: transparent; user-select: none;
 }
-.filter-btn.hotel { border-color: #6749FF; color: #6749FF; }
-.filter-btn.hotel.active { background: #6749FF; color: white; }
-.filter-btn.resto { border-color: #C41D3E; color: #C41D3E; }
-.filter-btn.resto.active { background: #C41D3E; color: white; }
-.filter-btn.balade { border-color: #0B7A5F; color: #0B7A5F; }
-.filter-btn.balade.active { background: #0B7A5F; color: white; }
-.filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.filter-btn .count { background: rgba(0,0,0,0.12); border-radius: 8px; padding: 1px 6px; font-size: 11px; }
-.marker-container { display: flex; flex-direction: column; align-items: center; }
-.marker-label {
-  padding: 5px 10px; border-radius: 14px; font-size: 11px; font-weight: 700;
-  white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.22);
-  border: 2px solid; cursor: pointer; line-height: 1.3; max-width: 160px;
+.fbtn-hotel { border-color: #6749FF; color: #6749FF; }
+.fbtn-hotel.on { background: #6749FF; color: white; }
+.fbtn-resto { border-color: #C41D3E; color: #C41D3E; }
+.fbtn-resto.on { background: #C41D3E; color: white; }
+.fbtn-balade { border-color: #0B7A5F; color: #0B7A5F; }
+.fbtn-balade.on { background: #0B7A5F; color: white; }
+.fbtn .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.fbtn .n { background: rgba(0,0,0,0.13); border-radius: 8px; padding: 1px 5px; font-size: 10px; }
+
+.mk { display: inline-flex; flex-direction: column; align-items: center; }
+.mk-lbl {
+  padding: 4px 8px; border-radius: 10px; font-size: 10px; font-weight: 700;
+  white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  border: 2px solid; cursor: pointer; line-height: 1.3;
+  max-width: 140px; overflow: hidden; text-overflow: ellipsis;
 }
-.marker-arrow { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
-.marker-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 1px; }
-.m-hotel { background: #6749FF; color: white; border-color: #5035e0; }
-.m-hotel-arrow { border-top: 8px solid #6749FF; }
-.m-hotel-dot { background: #5035e0; }
-.m-top { background: #C41D3E; color: white; border-color: #A3162F; }
-.m-top-arrow { border-top: 8px solid #C41D3E; }
-.m-top-dot { background: #A3162F; }
-.m-cabane { background: #E8590C; color: white; border-color: #CF4F0A; }
-.m-cabane-arrow { border-top: 8px solid #E8590C; }
-.m-cabane-dot { background: #CF4F0A; }
-.m-resto { background: white; color: #C41D3E; border-color: #C41D3E; }
-.m-resto-arrow { border-top: 8px solid #C41D3E; }
-.m-resto-dot { background: #C41D3E; }
-.m-balade { background: #0B7A5F; color: white; border-color: #096B52; }
-.m-balade-arrow { border-top: 8px solid #0B7A5F; }
-.m-balade-dot { background: #096B52; }
-.leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.18) !important; }
-.leaflet-popup-content { margin: 14px 16px !important; min-width: 220px; max-width: 300px; }
-.pop-title { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
-.pop-sub { font-size: 11px; color: #888; margin-bottom: 8px; font-style: italic; }
-.pop-desc { font-size: 12px; color: #333; line-height: 1.6; margin-bottom: 8px; }
-.pop-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
-.tag { padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
-.tag-top { background: #ffe8ed; color: #C41D3E; }
-.tag-cabane { background: #fff3ee; color: #E8590C; }
-.tag-mer { background: #e8f4ff; color: #1565C0; }
-.tag-velo { background: #f0eeff; color: #6749FF; }
-.tag-nat { background: #e6f5f0; color: #0B7A5F; }
-.tag-dist { background: #f5f5f5; color: #555; font-weight: 600; }
-.pop-route { background: #f8f7ff; border-left: 3px solid #6749FF; padding: 8px 10px; border-radius: 0 8px 8px 0; font-size: 11px; color: #444; line-height: 1.6; margin-top: 6px; }
-.pop-route strong { color: #6749FF; font-weight: 700; }
+.mk-tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
+.mk-dot { width: 8px; height: 8px; border-radius: 50%; }
+.hotel-lbl { background:#6749FF; color:#fff; border-color:#3d25c4; }
+.hotel-tri { border-top:7px solid #6749FF; }
+.hotel-dot { background:#3d25c4; }
+.top-lbl { background:#C41D3E; color:#fff; border-color:#8a0d28; }
+.top-tri { border-top:7px solid #C41D3E; }
+.top-dot { background:#8a0d28; }
+.cabane-lbl { background:#E8590C; color:#fff; border-color:#a03b06; }
+.cabane-tri { border-top:7px solid #E8590C; }
+.cabane-dot { background:#a03b06; }
+.resto-lbl { background:#fff; color:#C41D3E; border-color:#C41D3E; }
+.resto-tri { border-top:7px solid #fff; }
+.resto-dot { background:#C41D3E; }
+.balade-lbl { background:#0B7A5F; color:#fff; border-color:#064d3c; }
+.balade-tri { border-top:7px solid #0B7A5F; }
+.balade-dot { background:#064d3c; }
+
+.leaflet-popup-content-wrapper { border-radius:14px !important; box-shadow:0 4px 22px rgba(0,0,0,0.16) !important; }
+.leaflet-popup-content { margin:14px 16px !important; min-width:230px; max-width:310px; }
+.pp-title { font-size:14px; font-weight:800; color:#111; margin-bottom:2px; }
+.pp-sub { font-size:11px; color:#999; margin-bottom:8px; }
+.pp-desc { font-size:12px; color:#333; line-height:1.65; margin-bottom:8px; }
+.pp-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.t { padding:3px 8px; border-radius:9px; font-size:10px; font-weight:700; }
+.t-top { background:#ffe8ed; color:#C41D3E; }
+.t-cab { background:#fff0e6; color:#E8590C; }
+.t-mer { background:#e7f3ff; color:#1565C0; }
+.t-velo { background:#f0eeff; color:#6749FF; }
+.t-nat { background:#e4f5ef; color:#0B7A5F; }
+.t-d { background:#f4f4f4; color:#555; }
+.pp-route {
+  background:#f8f7ff; border-left:3px solid #6749FF;
+  padding:8px 10px; border-radius:0 8px 8px 0;
+  font-size:11px; color:#444; line-height:1.65; margin-top:4px;
+}
+.pp-route b { color:#6749FF; }
 #legend {
-  position: fixed; bottom: 70px; left: 10px; z-index: 1000;
-  background: white; border-radius: 10px; padding: 10px 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12); font-size: 11px;
+  position:fixed; bottom:66px; left:8px; z-index:1000;
+  background:white; border-radius:10px; padding:9px 12px;
+  box-shadow:0 3px 14px rgba(0,0,0,0.11); font-size:11px;
 }
-#legend h4 { font-size: 11px; font-weight: 700; color: #333; margin-bottom: 6px; }
-.legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-@media (max-width: 500px) { #legend { display: none; } }
+.li { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+.ld { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+@media(max-width:480px){ #legend{display:none} }
 </style>
 </head>
 <body>
 <div id="header">
-  <h1>Arcachon — Restaurants & Balades</h1>
-  <span>Haitza · 4 - 5 juillet 2026</span>
+  <h1>Arcachon / Pyla — Restaurants &amp; Balades</h1>
+  <a href="index.html">← Accueil</a>
 </div>
 <div id="map"></div>
 <div id="filter-bar">
-  <button class="filter-btn hotel active" id="btn-hotel" onclick="toggleGroup('hotel')">
-    <span class="dot"></span> Hotel <span class="count">1</span>
-  </button>
-  <button class="filter-btn resto active" id="btn-resto" onclick="toggleGroup('resto')">
-    <span class="dot"></span> Restaurants <span class="count">8</span>
-  </button>
-  <button class="filter-btn balade active" id="btn-balade" onclick="toggleGroup('balade')">
-    <span class="dot"></span> Balades <span class="count">4</span>
-  </button>
+  <button class="fbtn fbtn-hotel on" id="btn-hotel" onclick="toggle('hotel')"><span class="dot"></span>Hôtel<span class="n">1</span></button>
+  <button class="fbtn fbtn-resto on" id="btn-resto" onclick="toggle('resto')"><span class="dot"></span>Restaurants<span class="n">10</span></button>
+  <button class="fbtn fbtn-balade on" id="btn-balade" onclick="toggle('balade')"><span class="dot"></span>Balades<span class="n">10</span></button>
 </div>
 <div id="legend">
-  <h4>Légende</h4>
-  <div class="legend-item"><div class="legend-dot" style="background:#6749FF"></div><span>Hotel</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#C41D3E"></div><span>Top 10 immanquables</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#E8590C"></div><span>Cabanes / Ecaillers</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:white; border:2px solid #C41D3E;"></div><span>Autres restaurants</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#0B7A5F"></div><span>Balades & activités</span></div>
+  <div class="li"><div class="ld" style="background:#6749FF"></div>Hôtel</div>
+  <div class="li"><div class="ld" style="background:#C41D3E"></div>Restaurants immanquables</div>
+  <div class="li"><div class="ld" style="background:#E8590C"></div>Cabanes / Écaillers</div>
+  <div class="li"><div class="ld" style="background:#fff;border:2px solid #C41D3E;width:7px;height:7px"></div>Autres restaurants</div>
+  <div class="li"><div class="ld" style="background:#0B7A5F"></div>Balades &amp; activités</div>
 </div>
-<script>
-const map = L.map('map', {zoomControl: false}).setView([44.660, -1.168], 14);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap © CARTO', maxZoom: 19
-}).addTo(map);
-L.control.zoom({ position: 'topright' }).addTo(map);
 
-function icon(label, type) {
-  return L.divIcon({
-    className: '',
-    html: `<div class="marker-container">
-      <div class="marker-label m-${type}">${label}</div>
-      <div class="marker-arrow m-${type}-arrow"></div>
-      <div class="marker-dot m-${type}-dot"></div>
-    </div>`,
-    iconAnchor: [0, 0]
-  });
+<script>
+const map = L.map('map',{zoomControl:false}).setView([44.635,-1.175],13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'© OSM © CARTO', maxZoom:19, subdomains:'abcd'
+}).addTo(map);
+L.control.zoom({position:'topright'}).addTo(map);
+
+function mk(label, type) {
+  const html = `<div class="mk" style="position:relative;left:-50%">
+    <div class="mk-lbl ${type}-lbl">${label}</div>
+    <div class="mk-tri ${type}-tri"></div>
+    <div class="mk-dot ${type}-dot"></div>
+  </div>`;
+  return L.divIcon({className:'', html:html, iconAnchor:[0,43], iconSize:null});
 }
 
 function pop(title, sub, desc, tags, route) {
-  const tHtml = tags.map(t => `<span class="tag tag-${t.c}">${t.l}</span>`).join('');
-  const rHtml = route ? `<div class="pop-route"><strong>Itinéraire :</strong> ${route}</div>` : '';
-  return `<div class="pop-title">${title}</div>
-  <div class="pop-sub">${sub}</div>
-  <div class="pop-desc">${desc}</div>
-  <div class="pop-tags">${tHtml}</div>${rHtml}`;
+  const tg = tags.map(t=>`<span class="t t-${t.c}">${t.l}</span>`).join('');
+  const rt = route ? `<div class="pp-route"><b>Accès :</b> ${route}</div>` : '';
+  return `<div class="pp-title">${title}</div><div class="pp-sub">${sub}</div><div class="pp-desc">${desc}</div><div class="pp-tags">${tg}</div>${rt}`;
 }
 
-const groups = { hotel: L.layerGroup(), resto: L.layerGroup(), balade: L.layerGroup() };
-const state = { hotel: true, resto: true, balade: true };
+const G = {hotel:L.layerGroup(), resto:L.layerGroup(), balade:L.layerGroup()};
+const ST = {hotel:true, resto:true, balade:true};
 
-// HOTEL
-L.marker([44.6628, -1.1690], {icon: icon('Haitza', 'hotel'), zIndexOffset: 2000})
-  .bindPopup(pop('Haitza', 'Votre hotel — Arcachon · 2 nuits',
-    'Base pour les 2 derniers jours. Accès direct au front de mer, aux navettes vers le Cap Ferret et au quartier de l\'Aiguillon à 10 min à pied.',
-    [{c:'mer', l:'Front de mer'}, {c:'velo', l:'Base vélo'}], null))
-  .addTo(groups.hotel);
+// HÔTEL — Haitza à Pyla-sur-Mer (coords vérifiées : 44.6060, -1.2067)
+L.marker([44.6060,-1.2067],{icon:mk('Ha(a)ïtza','hotel'),zIndexOffset:3000})
+  .bindPopup(pop('Ha(a)ïtza','1 Avenue Louis Gaume, 33115 Pyla-sur-Mer',
+    'Hôtel 5★ à Pyla-sur-Mer, à 15 min en voiture d\'Arcachon, au pied de la Dune du Pilat. Point de départ idéal pour la Dune le matin tôt.',
+    [{c:'mer',l:'Pyla-sur-Mer'},{c:'nat',l:'Dune du Pilat 5 min'}],null)).addTo(G.hotel);
 
-// TOP 10 Arcachon
+// RESTAURANTS TOP (rouge plein)
 [
-  {
-    ll: [44.6625, -1.1698], n: 'Diego Plage', sub: 'Front de mer Arcachon · Immanquable #9',
-    desc: '40 ans d\'histoire. Ouvert tous les jours 9h-23h. Huîtres du Bassin, moules, homard entier, plateaux généreux. Guillaume Gouverne, champion européen des coquillages 2023. Terrasse romantique vue bassin et plage. Simplicité et fraîcheur.',
-    tags: [{c:'top', l:'#9 Top 10'}, {c:'mer', l:'Champion coquillages'}, {c:'mer', l:'Plateaux'}], dist: '5 min à pied depuis Haitza'
-  },
-  {
-    ll: [44.6618, -1.1720], n: 'Le Chipiron', sub: 'Quartier Aiguillon · Immanquable #10',
-    desc: 'Depuis 2010, reconnu Routard depuis 1997. Chipirons frits, gambas à la plancha, poulpe, poisson du jour. Tapas fraîches, huîtres du bassin. Plats 18-29€. Terrasse moderne conviviale. Local, pas snob, excellent rapport qualité/prix.',
-    tags: [{c:'top', l:'#10 Top 10'}, {c:'mer', l:'Plancha'}, {c:'mer', l:'18-29€'}], dist: '8 min à pied depuis Haitza'
-  },
-].forEach(d => {
-  L.marker(d.ll, {icon: icon(d.n, 'top'), zIndexOffset: 600})
-    .bindPopup(pop(d.n, `${d.sub} · ${d.dist}`, d.desc, d.tags, null))
-    .addTo(groups.resto);
-});
+  {ll:[44.6634,-1.1648],n:'Diego Plage',sub:'#9 Top 10 · 2 Bd Veyrier Montagnères, Arcachon · 25 min voiture',
+   desc:'40 ans d\'histoire. Ouvert 9h-23h. Huîtres du Bassin, moules, homard entier, plateaux. Guillaume Gouverne, champion européen coquillages 2023. Terrasse romantique vue bassin et plage. Simple et frais.',
+   tags:[{c:'top',l:'#9 Top 10'},{c:'mer',l:'Champion coquillages'},{c:'mer',l:'Plateaux'}],
+   route:'En voiture depuis Pyla : 15 min vers Arcachon centre, suivre le front de mer (boulevard Veyrier Montagnères).'},
+  {ll:[44.6566,-1.1472],n:'Le Chipiron',sub:'#10 Top 10 · 11 Rue de la Pêcherie, Arcachon · 25 min voiture',
+   desc:'Depuis 2010, reconnu Routard. Chipirons frits, gambas plancha, poulpe, poisson du jour. Tapas fraîches, huîtres. Plats 18-29€. Local, convivial, excellent rapport qualité/prix. Quartier de l\'Aiguillon.',
+   tags:[{c:'top',l:'#10 Top 10'},{c:'mer',l:'Plancha'},{c:'d',l:'18-29€'}],
+   route:'En voiture depuis Pyla : 20 min. Parking quartier Aiguillon (port de pêche d\'Arcachon).'},
+].forEach(d=>L.marker(d.ll,{icon:mk(d.n,'top'),zIndexOffset:1500}).bindPopup(pop(d.n,d.sub,d.desc,d.tags,d.route)).addTo(G.resto));
 
-// CABANES & ECAILLERS
+// CABANES & ÉCAILLERS (orange)
 [
-  {
-    ll: [44.6622, -1.1715], n: 'La Cabane de l\'Aiguillon', sub: 'Port de l\'Aiguillon',
-    desc: '3 générations d\'ostréiculteurs. Huîtres fraîches directement des parcs familiaux. Terrasse sur les parcs à huîtres. L\'expérience cabane à Arcachon — authentique, sans chichi.',
-    tags: [{c:'cabane', l:'Producteur 3 générations'}, {c:'mer', l:'Huitres parcs'}], dist: '10 min à pied'
-  },
-  {
-    ll: [44.6619, -1.1718], n: 'La Poissonnerie de l\'Aiguillon', sub: 'Quartier de l\'Aiguillon',
-    desc: 'Plateau "Tradition du Bassin" : huîtres, crevettes grises, langoustines, bulots. Produits ultra-frais selon les arrivages. Décoration marine soignée. Le plateau de fruits de mer le plus complet et le plus frais d\'Arcachon.',
-    tags: [{c:'cabane', l:'Tradition Bassin'}, {c:'mer', l:'Crevettes langoustines'}], dist: '10 min à pied'
-  },
-  {
-    ll: [44.6608, -1.1722], n: 'Chez Bidart', sub: 'Arcachon',
-    desc: 'Huîtres fines de claire, plateaux composés selon l\'arrivage. Spacieux, familial, atmosphère authentique sans tourisme de masse.',
-    tags: [{c:'cabane', l:'Huitres claires'}, {c:'mer', l:'Plateaux'}], dist: '12 min à pied'
-  },
-].forEach(d => {
-  L.marker(d.ll, {icon: icon(d.n, 'cabane'), zIndexOffset: 500})
-    .bindPopup(pop(d.n, `${d.sub} · ${d.dist}`, d.desc, d.tags, null))
-    .addTo(groups.resto);
-});
+  {ll:[44.6505,-1.1442],n:'La Cabane de l\'Aiguillon',sub:'Port de l\'Aiguillon, Arcachon · 20 min voiture',
+   desc:'3 générations d\'ostréiculteurs. Huîtres fraîches directement des parcs familiaux. Terrasse sur les parcs à huîtres. L\'expérience cabane à Arcachon — authentique, sans chichi.',
+   tags:[{c:'cab',l:'Producteur 3 gen.'},{c:'mer',l:'Huitres de parcs'}],
+   route:'En voiture depuis Pyla : 20 min vers Arcachon, suivre direction Aiguillon (port de pêche).'},
+  {ll:[44.6574,-1.1469],n:'La Poissonnerie de l\'Aiguillon',sub:'Quartier Aiguillon, Arcachon · 20 min voiture',
+   desc:'Plateau "Tradition du Bassin" : huîtres, crevettes grises, langoustines, bulots. Produits ultra-frais selon les arrivages. Décoration marine soignée. Le plateau le plus complet et le plus frais.',
+   tags:[{c:'cab',l:'Tradition Bassin'},{c:'mer',l:'Crevettes langoustines'}],
+   route:'En voiture depuis Pyla : 20 min. Quartier de l\'Aiguillon, port de pêche.'},
+].forEach(d=>L.marker(d.ll,{icon:mk(d.n,'cabane'),zIndexOffset:1000}).bindPopup(pop(d.n,d.sub,d.desc,d.tags,d.route)).addTo(G.resto));
 
-// AUTRES RESTOS
+// AUTRES RESTAURANTS (blanc/rouge)
 [
-  {
-    ll: [44.6630, -1.1702], n: 'Grand Café Victoria', sub: 'Front de mer, Arcachon',
-    desc: 'Trattoria + fruits de mer sur le front de mer. Grande terrasse face aux cabines de bain historiques. Huîtres, poissons frais, pasta maison. Ambiance chaleureuse et conviviale. Service continu toute la journée. ~50-60€/pers.',
-    tags: [{c:'mer', l:'Front de mer'}, {c:'mer', l:'Trattoria fruits mer'}], dist: '7 min à pied'
-  },
-  {
-    ll: [44.6610, -1.1705], n: 'Le PP', sub: '4 Av Notre Dame des Passes, Arcachon',
-    desc: 'Vue mer dégagée. Huîtres, poissons, crustacés, tapas, plateau grillé. Savoir-faire multigénérationnel. Ouvert mardi-dimanche de 10h à 1h du matin en haute saison.',
-    tags: [{c:'mer', l:'Vue mer'}, {c:'mer', l:'Fruits de mer'}], dist: '8 min à pied'
-  },
-  {
-    ll: [44.6583, -1.1780], n: 'Café Restaurant du Port', sub: 'La Teste-de-Buch',
-    desc: 'Institution du Bassin à La Teste (à côté d\'Arcachon). Fruits de mer, huîtres, poissons. Terrasse face au port ostréicole typique. Ouvert toute l\'année. Le vrai repas de pêcheurs.',
-    tags: [{c:'mer', l:'Port authentique'}, {c:'velo', l:'15 min vélo depuis Haitza'}], dist: '15 min vélo'
-  },
-].forEach(d => {
-  L.marker(d.ll, {icon: icon(d.n, 'resto'), zIndexOffset: 400})
-    .bindPopup(pop(d.n, `${d.sub} · ${d.dist}`, d.desc, d.tags, null))
-    .addTo(groups.resto);
-});
+  {ll:[44.6632,-1.1661],n:'Grand Café Victoria',sub:'26 Bd Veyrier Montagnères, Arcachon · 25 min voiture',
+   desc:'Trattoria + fruits de mer sur le front de mer historique. Grande terrasse face aux cabines de bain. Huîtres, poissons frais, pasta maison. Service continu, sans réservation. ~50€/pers.',
+   tags:[{c:'mer',l:'Front de mer'},{c:'mer',l:'Trattoria fruits mer'}],
+   route:'En voiture depuis Pyla : 15 min. Boulevard Veyrier Montagnères, front de mer d\'Arcachon.'},
+  {ll:[44.6384,-1.1431],n:'Café Restaurant du Port',sub:'La Teste-de-Buch · 10 min voiture de Pyla',
+   desc:'Institution du Bassin. Fruits de mer, huîtres, poissons du jour. Terrasse face au port ostréicole typique. Ouvert toute l\'année. Le vrai repas de pêcheurs, ambiance portuaire.',
+   tags:[{c:'mer',l:'Port authentique'},{c:'mer',l:'Institution locale'}],
+   route:'En voiture depuis Pyla : 10 min vers La Teste-de-Buch. Suivre direction port de pêche.'},
+  {ll:[44.6575,-1.1695],n:'Le Bistrot du Bassin',sub:'Arcachon centre · 20 min voiture',
+   desc:'Bistrot simple et bon, cuisine maison, poissons du marché, ardoise quotidienne. Ambiance locale, sans chichi. Bon rapport qualité/prix pour un déjeuner en ville.',
+   tags:[{c:'mer',l:'Ardoise du jour'},{c:'mer',l:'Local'}],
+   route:'En voiture depuis Pyla : 20 min. Centre d\'Arcachon.'},
+  {ll:[44.6610,-1.1705],n:'Le PP',sub:'4 Av. Notre Dame des Passes, Arcachon · 20 min voiture',
+   desc:'Vue mer dégagée. Huîtres, poissons, crustacés, tapas. Savoir-faire multigénérationnel. Ouvert mardi-dimanche 10h-1h en haute saison.',
+   tags:[{c:'mer',l:'Vue mer'},{c:'mer',l:'Fruits de mer'}],
+   route:'En voiture depuis Pyla : 20 min. Arcachon centre, côté plage.'},
+  {ll:[44.6526,-1.2200],n:'Diego Plage Pyla',sub:'Pyla-sur-Mer · 5 min voiture',
+   desc:'Adresse locale de Pyla, simple et bonne. Fruits de mer, poissons grillés, vue sur la pinède. La cantine des résidents de Pyla.',
+   tags:[{c:'mer',l:'Local Pyla'},{c:'d',l:'5 min voiture'}],
+   route:'Depuis Ha(a)ïtza : 5 min en voiture dans Pyla-sur-Mer.'},
+].forEach(d=>L.marker(d.ll,{icon:mk(d.n,'resto'),zIndexOffset:800}).bindPopup(pop(d.n,d.sub,d.desc,d.tags,d.route)).addTo(G.resto));
 
-// BALADES & ACTIVITES Arcachon
+// BALADES & ACTIVITÉS (vert)
 [
-  {
-    ll: [44.6638, -1.1668], n: 'Jetée d\'Eyrac + Navette Cap Ferret', sub: 'Transport & vue · 5 min à pied',
-    desc: 'Départ des navettes maritimes vers Cap Ferret (7€ adulte, vélos acceptés +5.50€, toutes les heures 7h-23h). Vue sur le Bassin depuis la jetée. Coucher de soleil remarquable depuis l\'extrémité de la jetée.',
-    tags: [{c:'nat', l:'Navette Cap Ferret'}, {c:'dist', l:'5 min à pied'}, {c:'mer', l:'7€ adulte'}],
-    route: 'Depuis Haitza → longer le front de mer vers le nord sur 400m. La jetée d\'Eyrac est sur la droite avant le Casino. Navettes toutes les heures.'
-  },
-  {
-    ll: [44.6658, -1.1910], n: 'Ville d\'Hiver d\'Arcachon', sub: 'Balade patrimoine · 15 min vélo',
-    desc: 'Quartier haut de la ville construit en 1863 dans les pins. Villas Belle Époque aux noms poétiques : Villa Marguerite, Villa Algérienne, Moorish Casino. Architecture extravagante et préservée. Balade 1h à pied ou à vélo dans les allées ombragées. Coup de cœur garanti.',
-    tags: [{c:'nat', l:'Patrimoine 1863'}, {c:'dist', l:'15 min vélo'}, {c:'velo', l:'Allées ombragées'}],
-    route: 'Depuis Haitza → monter l\'Avenue de la Forêt (côté est) vers le haut. 1.5 km, quelques côtes. Ou prendre le funiculaire (été) depuis le front de mer.'
-  },
-  {
-    ll: [44.6714, -1.1636], n: 'Île aux Oiseaux + Cabanes Tchanquées', sub: 'Excursion bateau · Départ Eyrac',
-    desc: 'Cabanes de pêcheurs sur pilotis au milieu du Bassin, symbole absolu d\'Arcachon. Excursion en bateau depuis la jetée d\'Eyrac. À faire à marée haute pour approcher les cabanes. Plus de 250 espèces d\'oiseaux observables. Moment suspendu.',
-    tags: [{c:'nat', l:'Cabanes tchanquées'}, {c:'mer', l:'Excursion 1h15-2h'}, {c:'dist', l:'à partir de 14€'}],
-    route: 'Réserver la veille au minimum en juillet. Départ jetée d\'Eyrac (5 min à pied depuis Haitza). Durée 1h15 à 2h. Opérateurs : Bateliers Arcachonnais ou Les Pinasses d\'Alex.'
-  },
-  {
-    ll: [44.5920, -1.2150], n: 'Dune du Pilat', sub: 'Incontournable absolu · J5 (samedi 5 juil.)',
-    desc: 'La plus haute dune d\'Europe (106m). Vue 360° sur la forêt des Landes et l\'Océan. Accès gratuit, parking payant (1-14€). Arriver impérativement avant 10h en juillet : sable frais, foule limitée, lumière de matin. Descendre se baigner au pied après la montée.',
-    tags: [{c:'nat', l:'Europe en un lieu'}, {c:'dist', l:'15 min voiture depuis Arcachon'}, {c:'nat', l:'Gratuit'}],
-    route: 'En voiture depuis Arcachon : route de la Corniche vers le sud direction Pyla-sur-Mer. 15 min. Parking au pied de la dune. Arriver avant 10h — après c\'est bondé et le sable brûle. Escalier installé de Pâques à la Toussaint.'
-  },
-].forEach(d => {
-  L.marker(d.ll, {icon: icon(d.n, 'balade'), zIndexOffset: 300})
-    .bindPopup(pop(d.n, d.sub, d.desc, d.tags, d.route))
-    .addTo(groups.balade);
-});
+  {ll:[44.5993,-1.2056],n:'Dune du Pilat',sub:'INCONTOURNABLE · 10 min voiture · Gratuit',
+   desc:'La plus haute dune d\'Europe (106 m). Vue 360° sur la forêt des Landes et l\'Océan. Accès libre. Parking payant (1-14€). Arriver impérativement avant 9h en juillet : sable frais, foule quasi-nulle, lumière de matin. Descendre se baigner au pied.',
+   tags:[{c:'nat',l:'Incontournable absolu'},{c:'d',l:'10 min voiture'},{c:'d',l:'Avant 9h'}],
+   route:'En voiture depuis Ha(a)ïtza : 10 min vers le sud sur la D218. Parking au pied de la dune. Escalier installé de Pâques à la Toussaint.'},
+  {ll:[44.6645,-1.1688],n:'Île aux Oiseaux — Cabanes Tchanquées',sub:'Excursion bateau · Départ jetée Thiers · 25 min voiture',
+   desc:'Les cabanes de pêcheurs sur pilotis, symbole absolu du Bassin d\'Arcachon. Excursion en bateau depuis la jetée Thiers. À marée haute pour approcher les cabanes. 250+ espèces d\'oiseaux. Durée 1h15 à 2h. À partir de 14€.',
+   tags:[{c:'nat',l:'Cabanes tchanquées'},{c:'mer',l:'1h15-2h · 14€+'}],
+   route:'En voiture depuis Pyla : 20 min jusqu\'à la jetée Thiers (Arcachon centre). Réserver la veille. Opérateur : Bateliers Arcachonnais.'},
+  {ll:[44.6572,-1.1768],n:'Ville d\'Hiver d\'Arcachon',sub:'Balade patrimoine · 25 min voiture · Gratuit',
+   desc:'Quartier haut construit en 1863 dans les pins. Villas Belle Époque extravagantes aux noms poétiques. Architecture unique, atmosphère suspendue. 1h à pied dans les allées ombragées. Coup de cœur garanti.',
+   tags:[{c:'nat',l:'Patrimoine 1863'},{c:'d',l:'1h à pied'},{c:'d',l:'Gratuit'}],
+   route:'En voiture depuis Pyla : 20 min jusqu\'à Arcachon. Monter l\'avenue de la Forêt côté est. Ou funiculaire depuis le front de mer (été).'},
+  {ll:[44.6645,-1.1688],n:'Jetée Thiers — Front de mer',sub:'20 min voiture · Gratuit',
+   desc:'La plus grande jetée d\'Arcachon. Vue sur l\'ensemble du Bassin. Départ des excursions Île aux Oiseaux. Coucher de soleil face au Bassin depuis l\'extrémité. Promenade agréable le long du front de mer.',
+   tags:[{c:'nat',l:'Front de mer'},{c:'mer',l:'Vue bassin'},{c:'d',l:'Gratuit'}],
+   route:'En voiture depuis Pyla : 20 min. Se garer face à la mer, longer le boulevard Veyrier Montagnères.'},
+  {ll:[44.6597,-1.1727],n:'Parc Mauresque',sub:'Arcachon · 20 min voiture · Gratuit',
+   desc:'Parc historique d\'Arcachon à flanc de colline dans les pins. Architecture mauresque du casino historique (1863). Promenade ombragée, vue sur le Bassin. Agréable le matin avant la chaleur.',
+   tags:[{c:'nat',l:'Parc historique'},{c:'d',l:'Gratuit'},{c:'d',l:'30 min'}],
+   route:'En voiture depuis Pyla : 20 min. Arcachon centre, montée depuis le front de mer.'},
+  {ll:[44.6595,-1.1929],n:'Plage Pereire',sub:'Arcachon · 20 min voiture',
+   desc:'Plage d\'Arcachon la plus calme et la plus locale. Pente douce, eau protégée du Bassin, ombragée par les pins. Idéale pour les familles. Moins fréquentée que la plage centrale. Pédalos et kayaks à louer.',
+   tags:[{c:'nat',l:'Plage bassin'},{c:'nat',l:'Eau calme'},{c:'d',l:'20 min voiture'}],
+   route:'En voiture depuis Pyla : 20 min, direction La Moulleau puis Pereire.'},
+  {ll:[44.6402,-1.0194],n:'Parc Ornithologique du Teich',sub:'35 min voiture · Payant',
+   desc:'120 hectares de lagunes, marais, bois. 300+ espèces d\'oiseaux. Flamants, spatules, aigrettes. Le meilleur parc ornithologique du Bassin. Ouvert toute l\'année, parcours balisés. Incontournable si vous aimez la nature.',
+   tags:[{c:'nat',l:'300+ espèces'},{c:'nat',l:'120 ha'},{c:'d',l:'35 min voiture'}],
+   route:'En voiture depuis Pyla : 35 min vers le Teich (D650, puis D3). Parking gratuit. Compter 2-3h de visite.'},
+  {ll:[44.5993,-1.2056],n:'Plage au pied de la Dune du Pilat',sub:'10 min voiture · Gratuit',
+   desc:'Descendre la dune et se baigner au pied. Plage sauvage, océan ouvert, houle possible. La récompense après l\'ascension. Attention : remontée obligatoire (la montée est plus dure que la descente). Apporter de l\'eau.',
+   tags:[{c:'nat',l:'Plage Océan sauvage'},{c:'d',l:'10 min voiture'},{c:'d',l:'Après la Dune'}],
+   route:'Au pied de la Dune du Pilat. Même parking que la Dune. Accès par l\'escalier ou en descendant la dune.'},
+  {ll:[44.6060,-1.2067],n:'Vélo à Pyla-sur-Mer',sub:'Depuis Ha(a)ïtza · Gratuit hors location',
+   desc:'Pyla-sur-Mer est traversée par des pistes cyclables calmes dans la pinède. Circuit possible : Pyla → La Moulleau → Plage Pereire (A/R ~15 km, 1h). Terrain quasi-plat dans la forêt.',
+   tags:[{c:'velo',l:'Circuit Pyla'},{c:'d',l:'~15 km · 1h'},{c:'nat',l:'Pinède'}],
+   route:'Depuis Ha(a)ïtza → piste cyclable en direction du nord vers La Moulleau. Longer la route côtière ombragée.'},
+  {ll:[44.6634,-1.1648],n:'Traversée en navette — vers Cap Ferret',sub:'20 min voiture jusqu\'à la jetée · 7€/adulte',
+   desc:'Prendre la navette maritime depuis la jetée Thiers ou Eyrac d\'Arcachon vers Cap Ferret. 30 min de traversée. Vélos acceptés (+5.50€). Toutes les heures 7h-23h. Incontournable pour la journée Cap Ferret sans voiture.',
+   tags:[{c:'mer',l:'Navette maritime'},{c:'d',l:'7€ adulte · 30 min'}],
+   route:'En voiture depuis Pyla : 20 min jusqu\'à la jetée Thiers (Arcachon). Ou en vélo depuis l\'hôtel (25 km, 1h30). Navette toutes les heures.'},
+].forEach(d=>L.marker(d.ll,{icon:mk(d.n,'balade'),zIndexOffset:500}).bindPopup(pop(d.n,d.sub,d.desc,d.tags,d.route||null)).addTo(G.balade));
 
-Object.values(groups).forEach(g => g.addTo(map));
-const pts = [];
-Object.values(groups).forEach(g => g.eachLayer(l => { if (l.getLatLng) pts.push(l.getLatLng()); }));
-if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.08));
+Object.values(G).forEach(g=>g.addTo(map));
+const pts=[];
+Object.values(G).forEach(g=>g.eachLayer(l=>{if(l.getLatLng)pts.push(l.getLatLng())}));
+if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.06));
 
-function toggleGroup(name) {
-  state[name] = !state[name];
-  if (state[name]) groups[name].addTo(map);
-  else map.removeLayer(groups[name]);
-  document.getElementById('btn-' + name).classList.toggle('active', state[name]);
+function toggle(n){
+  ST[n]=!ST[n];
+  ST[n]?G[n].addTo(map):map.removeLayer(G[n]);
+  document.getElementById('btn-'+n).classList.toggle('on',ST[n]);
 }
 </script>
 </body>

@@ -2,410 +2,330 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Cap Ferret — Restaurants & Balades</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, 'Segoe UI', Arial, sans-serif; background: #f5f3ff; overflow: hidden; }
-
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
 #header {
   background: #6749FF; color: white; padding: 10px 16px;
   display: flex; align-items: center; justify-content: space-between;
-  position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2000; height: 46px;
 }
-#header h1 { font-size: 15px; font-weight: 700; }
-#header span { font-size: 11px; opacity: 0.8; }
-
-#map { position: fixed; top: 46px; left: 0; right: 0; bottom: 60px; z-index: 1; }
-
-/* Barre filtres bottom (style app) */
+#header h1 { font-size: 14px; font-weight: 700; }
+#header a { color: rgba(255,255,255,0.75); font-size: 11px; text-decoration: none; }
+#map { position: fixed; top: 46px; left: 0; right: 0; bottom: 58px; }
 #filter-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
-  background: white; border-top: 1px solid #e8e6ff;
+  position: fixed; bottom: 0; left: 0; right: 0; height: 58px;
+  background: white; border-top: 1px solid #ede9ff;
   display: flex; align-items: center; justify-content: center;
-  gap: 10px; padding: 0 16px; z-index: 2000;
-  box-shadow: 0 -2px 12px rgba(103,73,255,0.10);
+  gap: 8px; padding: 0 12px; z-index: 2000;
+  box-shadow: 0 -2px 10px rgba(103,73,255,0.10);
 }
-.filter-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 16px; border-radius: 20px; border: 2px solid;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: all 0.18s; white-space: nowrap; background: white;
-  -webkit-tap-highlight-color: transparent;
+.fbtn {
+  display: flex; align-items: center; gap: 5px; flex: 1; justify-content: center;
+  padding: 7px 10px; border-radius: 18px; border: 2px solid;
+  font-size: 12px; font-weight: 700; cursor: pointer; background: white;
+  max-width: 130px; -webkit-tap-highlight-color: transparent; user-select: none;
 }
-.filter-btn.hotel { border-color: #6749FF; color: #6749FF; }
-.filter-btn.hotel.active { background: #6749FF; color: white; }
-.filter-btn.resto { border-color: #C41D3E; color: #C41D3E; }
-.filter-btn.resto.active { background: #C41D3E; color: white; }
-.filter-btn.balade { border-color: #0B7A5F; color: #0B7A5F; }
-.filter-btn.balade.active { background: #0B7A5F; color: white; }
-.filter-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-.filter-btn .count {
-  background: rgba(0,0,0,0.12); border-radius: 8px;
-  padding: 1px 6px; font-size: 11px;
+.fbtn-hotel { border-color: #6749FF; color: #6749FF; }
+.fbtn-hotel.on { background: #6749FF; color: white; }
+.fbtn-resto { border-color: #C41D3E; color: #C41D3E; }
+.fbtn-resto.on { background: #C41D3E; color: white; }
+.fbtn-balade { border-color: #0B7A5F; color: #0B7A5F; }
+.fbtn-balade.on { background: #0B7A5F; color: white; }
+.fbtn .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.fbtn .n { background: rgba(0,0,0,0.13); border-radius: 8px; padding: 1px 5px; font-size: 10px; }
+
+/* Marqueur : label + triangle + point — l'ancre est le centre du point */
+.mk { display: inline-flex; flex-direction: column; align-items: center; }
+.mk-lbl {
+  padding: 4px 8px; border-radius: 10px; font-size: 10px; font-weight: 700;
+  white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  border: 2px solid; cursor: pointer; line-height: 1.3;
+  max-width: 140px; overflow: hidden; text-overflow: ellipsis;
 }
+.mk-tri { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
+.mk-dot { width: 8px; height: 8px; border-radius: 50%; }
 
-/* Marqueurs */
-.marker-container { display: flex; flex-direction: column; align-items: center; }
-.marker-label {
-  padding: 5px 10px; border-radius: 14px; font-size: 11px; font-weight: 700;
-  white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.22);
-  border: 2px solid; cursor: pointer; line-height: 1.3; max-width: 160px;
-  overflow: hidden; text-overflow: ellipsis;
-}
-.marker-arrow { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; }
-.marker-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 1px; }
+.hotel-lbl { background:#6749FF; color:#fff; border-color:#3d25c4; }
+.hotel-tri { border-top:7px solid #6749FF; }
+.hotel-dot { background:#3d25c4; }
 
-.m-hotel { background: #6749FF; color: white; border-color: #5035e0; }
-.m-hotel-arrow { border-top: 8px solid #6749FF; }
-.m-hotel-dot { background: #5035e0; }
+.top-lbl { background:#C41D3E; color:#fff; border-color:#8a0d28; }
+.top-tri { border-top:7px solid #C41D3E; }
+.top-dot { background:#8a0d28; }
 
-.m-top { background: #C41D3E; color: white; border-color: #A3162F; }
-.m-top-arrow { border-top: 8px solid #C41D3E; }
-.m-top-dot { background: #A3162F; }
+.cabane-lbl { background:#E8590C; color:#fff; border-color:#a03b06; }
+.cabane-tri { border-top:7px solid #E8590C; }
+.cabane-dot { background:#a03b06; }
 
-.m-cabane { background: #E8590C; color: white; border-color: #CF4F0A; }
-.m-cabane-arrow { border-top: 8px solid #E8590C; }
-.m-cabane-dot { background: #CF4F0A; }
+.resto-lbl { background:#fff; color:#C41D3E; border-color:#C41D3E; }
+.resto-tri { border-top:7px solid #fff; }
+.resto-dot { background:#C41D3E; }
 
-.m-resto { background: white; color: #C41D3E; border-color: #C41D3E; }
-.m-resto-arrow { border-top: 8px solid #C41D3E; }
-.m-resto-dot { background: #C41D3E; }
-
-.m-balade { background: #0B7A5F; color: white; border-color: #096B52; }
-.m-balade-arrow { border-top: 8px solid #0B7A5F; }
-.m-balade-dot { background: #096B52; }
+.balade-lbl { background:#0B7A5F; color:#fff; border-color:#064d3c; }
+.balade-tri { border-top:7px solid #0B7A5F; }
+.balade-dot { background:#064d3c; }
 
 /* Popup */
-.leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.18) !important; }
-.leaflet-popup-content { margin: 14px 16px !important; min-width: 220px; max-width: 300px; }
-.pop-title { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
-.pop-sub { font-size: 11px; color: #888; margin-bottom: 8px; font-style: italic; }
-.pop-desc { font-size: 12px; color: #333; line-height: 1.6; margin-bottom: 8px; }
-.pop-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
-.tag {
-  padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 700;
-  letter-spacing: 0.3px;
+.leaflet-popup-content-wrapper { border-radius:14px !important; box-shadow:0 4px 22px rgba(0,0,0,0.16) !important; }
+.leaflet-popup-content { margin:14px 16px !important; min-width:230px; max-width:310px; }
+.pp-title { font-size:14px; font-weight:800; color:#111; margin-bottom:2px; }
+.pp-sub { font-size:11px; color:#999; margin-bottom:8px; }
+.pp-desc { font-size:12px; color:#333; line-height:1.65; margin-bottom:8px; }
+.pp-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.t { padding:3px 8px; border-radius:9px; font-size:10px; font-weight:700; }
+.t-top { background:#ffe8ed; color:#C41D3E; }
+.t-cab { background:#fff0e6; color:#E8590C; }
+.t-mer { background:#e7f3ff; color:#1565C0; }
+.t-velo { background:#f0eeff; color:#6749FF; }
+.t-nat { background:#e4f5ef; color:#0B7A5F; }
+.t-d { background:#f4f4f4; color:#555; }
+.pp-route {
+  background:#f8f7ff; border-left:3px solid #6749FF;
+  padding:8px 10px; border-radius:0 8px 8px 0;
+  font-size:11px; color:#444; line-height:1.65; margin-top:4px;
 }
-.tag-top { background: #ffe8ed; color: #C41D3E; }
-.tag-cabane { background: #fff3ee; color: #E8590C; }
-.tag-mer { background: #e8f4ff; color: #1565C0; }
-.tag-velo { background: #f0eeff; color: #6749FF; }
-.tag-nat { background: #e6f5f0; color: #0B7A5F; }
-.tag-dist { background: #f5f5f5; color: #555; font-weight: 600; }
-.pop-route { background: #f8f7ff; border-left: 3px solid #6749FF; padding: 8px 10px; border-radius: 0 8px 8px 0; font-size: 11px; color: #444; line-height: 1.6; margin-top: 6px; }
-.pop-route strong { color: #6749FF; font-weight: 700; }
+.pp-route b { color:#6749FF; }
 
-/* Légende desktop */
 #legend {
-  position: fixed; bottom: 70px; left: 10px; z-index: 1000;
-  background: white; border-radius: 10px; padding: 10px 14px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12); font-size: 11px;
+  position:fixed; bottom:66px; left:8px; z-index:1000;
+  background:white; border-radius:10px; padding:9px 12px;
+  box-shadow:0 3px 14px rgba(0,0,0,0.11); font-size:11px;
 }
-#legend h4 { font-size: 11px; font-weight: 700; color: #333; margin-bottom: 6px; }
-.legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-@media (max-width: 500px) {
-  #legend { display: none; }
-  .filter-btn { padding: 7px 12px; font-size: 12px; }
-}
+.li { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+.ld { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+@media(max-width:480px){ #legend{display:none} }
 </style>
 </head>
 <body>
 <div id="header">
-  <h1>Cap Ferret — Restaurants & Balades</h1>
-  <span>Villa Collette · 29 juin - 4 juil. 2026</span>
+  <h1>Cap Ferret — Restaurants &amp; Balades</h1>
+  <a href="index.html">← Accueil</a>
 </div>
 <div id="map"></div>
-
 <div id="filter-bar">
-  <button class="filter-btn hotel active" id="btn-hotel" onclick="toggleGroup('hotel')">
-    <span class="dot"></span> Hotel <span class="count">1</span>
-  </button>
-  <button class="filter-btn resto active" id="btn-resto" onclick="toggleGroup('resto')">
-    <span class="dot"></span> Restaurants <span class="count">20</span>
-  </button>
-  <button class="filter-btn balade active" id="btn-balade" onclick="toggleGroup('balade')">
-    <span class="dot"></span> Balades <span class="count">6</span>
-  </button>
+  <button class="fbtn fbtn-hotel on" id="btn-hotel" onclick="toggle('hotel')"><span class="dot"></span>Hôtel<span class="n">1</span></button>
+  <button class="fbtn fbtn-resto on" id="btn-resto" onclick="toggle('resto')"><span class="dot"></span>Restaurants<span class="n">26</span></button>
+  <button class="fbtn fbtn-balade on" id="btn-balade" onclick="toggle('balade')"><span class="dot"></span>Balades<span class="n">12</span></button>
 </div>
-
 <div id="legend">
-  <h4>Légende</h4>
-  <div class="legend-item"><div class="legend-dot" style="background:#6749FF"></div><span>Hotel</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#C41D3E"></div><span>Top 10 immanquables</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#E8590C"></div><span>Cabanes ostréicoles</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#C41D3E; border:2px solid #C41D3E; width:8px; height:8px; background:white;"></div><span>Autres restaurants</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:#0B7A5F"></div><span>Balades & activités</span></div>
+  <div class="li"><div class="ld" style="background:#6749FF"></div>Hôtel</div>
+  <div class="li"><div class="ld" style="background:#C41D3E"></div>Top 10 immanquables</div>
+  <div class="li"><div class="ld" style="background:#E8590C"></div>Cabanes ostréicoles</div>
+  <div class="li"><div class="ld" style="background:#fff;border:2px solid #C41D3E;width:7px;height:7px"></div>Autres restaurants</div>
+  <div class="li"><div class="ld" style="background:#0B7A5F"></div>Balades &amp; activités</div>
 </div>
 
 <script>
-const map = L.map('map', {zoomControl: false}).setView([44.680, -1.225], 12);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap © CARTO', maxZoom: 19
+const map = L.map('map',{zoomControl:false}).setView([44.68,-1.235],12);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  attribution:'© OSM © CARTO', maxZoom:19, subdomains:'abcd'
 }).addTo(map);
-L.control.zoom({ position: 'topright' }).addTo(map);
+L.control.zoom({position:'topright'}).addTo(map);
 
-function icon(label, type) {
+// Marqueur stable au zoom :
+// La hauteur totale du marqueur = lbl_h + tri(7) + dot(8) + gap(2) ≈ ~43px
+// L'ancre (iconAnchor) = [moitie_largeur, hauteur_totale] => on ancre le bas du dot sur le point GPS
+// Pour éviter de connaître la largeur exacte on utilise iconAnchor dynamique via CSS
+function mk(label, type) {
+  // On construit le HTML. L'ancre est réglée à [50% largeur, 43px depuis le haut].
+  // Comme la largeur varie, on utilise une astuce : margin-left négatif de 50% via CSS.
+  const html = `<div class="mk" style="position:relative;left:-50%">
+    <div class="mk-lbl ${type}-lbl">${label}</div>
+    <div class="mk-tri ${type}-tri"></div>
+    <div class="mk-dot ${type}-dot"></div>
+  </div>`;
   return L.divIcon({
     className: '',
-    html: `<div class="marker-container">
-      <div class="marker-label m-${type}">${label}</div>
-      <div class="marker-arrow m-${type}-arrow"></div>
-      <div class="marker-dot m-${type}-dot"></div>
-    </div>`,
-    iconAnchor: [0, 0]
+    html: html,
+    iconAnchor: [0, 43], // ancre verticale sur le bas du point
+    iconSize: null
   });
 }
 
 function pop(title, sub, desc, tags, route) {
-  const tHtml = tags.map(t => `<span class="tag tag-${t.c}">${t.l}</span>`).join('');
-  const rHtml = route ? `<div class="pop-route"><strong>Itinéraire :</strong> ${route}</div>` : '';
-  return `<div class="pop-title">${title}</div>
-  <div class="pop-sub">${sub}</div>
-  <div class="pop-desc">${desc}</div>
-  <div class="pop-tags">${tHtml}</div>${rHtml}`;
+  const tg = tags.map(t=>`<span class="t t-${t.c}">${t.l}</span>`).join('');
+  const rt = route ? `<div class="pp-route"><b>Itinéraire :</b> ${route}</div>` : '';
+  return `<div class="pp-title">${title}</div><div class="pp-sub">${sub}</div><div class="pp-desc">${desc}</div><div class="pp-tags">${tg}</div>${rt}`;
 }
 
-// ─── GROUPES ───
-const groups = { hotel: L.layerGroup(), resto: L.layerGroup(), balade: L.layerGroup() };
-const state = { hotel: true, resto: true, balade: true };
+const G = {hotel:L.layerGroup(), resto:L.layerGroup(), balade:L.layerGroup()};
+const ST = {hotel:true, resto:true, balade:true};
 
-// ══════════════════════════════════
-// HOTEL
-// ══════════════════════════════════
-L.marker([44.6309, -1.2524], {icon: icon('Villa Collette', 'hotel'), zIndexOffset: 2000})
-  .bindPopup(pop('Villa Collette', 'Votre base — Cap Ferret',
-    'Point de départ de toutes les aventures à vélo. Accès direct aux pistes cyclables vers le nord (L\'Herbe, Le Canon) et au sud (La Pointe, Chez Hortense).',
-    [{c:'velo', l:'Base vélo'}, {c:'mer', l:'Bassin'}], null))
-  .addTo(groups.hotel);
+// HÔTEL
+L.marker([44.6521,-1.2437],{icon:mk('Villa Colette','hotel'),zIndexOffset:3000})
+  .bindPopup(pop('Villa Colette','39 Bd de la Plage, Cap Ferret',
+    'Hôtel de charme sur la place du village, face au bassin. Toutes les pistes cyclables partent depuis ici vers le nord (L\'Herbe, Canon) et le sud (la Pointe, Chez Hortense).',
+    [{c:'velo',l:'Base vélo'},{c:'mer',l:'Vue bassin'}],null)).addTo(G.hotel);
 
-// ══════════════════════════════════
-// RESTAURANTS — TOP 10
-// ══════════════════════════════════
-const top10 = [
-  {
-    ll: [44.6308, -1.2503], n: 'Chez Hortense', sub: 'La Pointe · Immanquable #1',
-    desc: 'Institution depuis 1900, 4 générations. Moules au jambon à manger avec les doigts (recette transmise depuis des générations). Turbot à la plancha, poissons du jour. Vue directe sur la Dune du Pilat. Réservation impérative en juillet.',
-    tags: [{c:'top', l:'#1 Top 10'}, {c:'mer', l:'Moules jambon'}, {c:'mer', l:'Turbot plancha'}],
-    dist: '8 min vélo depuis Villa Collette'
-  },
-  {
-    ll: [44.6384, -1.2480], n: "L'Escale", sub: 'Jetée Bélisaire · Immanquable #2',
-    desc: 'Depuis 1950. Pieds dans l\'eau, service continu sans réservation. Poissons grillés à la plancha, fruits de mer, huîtres. Coucher de soleil face à la Dune du Pilat. La Bodega de Marcel (bar tapas live music) juste à côté.',
-    tags: [{c:'top', l:'#2 Top 10'}, {c:'mer', l:'Plancha'}, {c:'mer', l:'Sans résa'}],
-    dist: '12 min vélo depuis Villa Collette'
-  },
-  {
-    ll: [44.6718, -1.2221], n: 'Pinasse Café', sub: 'Grand Piquey · Immanquable #3',
-    desc: 'Ancienne villa avec terrasse vue bassin d\'exception. Grillades, poissons grillés, fruits de mer, produits locaux. Cuisine soignée. Le plus beau point de vue depuis une table de la presqu\'île. Note 4.8/5 (3700+ avis).',
-    tags: [{c:'top', l:'#3 Top 10'}, {c:'mer', l:'Vue bassin'}, {c:'mer', l:'Grillades'}],
-    dist: '25 min vélo depuis Villa Collette'
-  },
-  {
-    ll: [44.6309, -1.2490], n: 'Chai Bertrand', sub: 'Quartier pêcheurs, Cap Ferret · Immanquable #4',
-    desc: 'Cabane ostréicole dans le quartier historique des pêcheurs, à deux pas de la Douane. Huîtres ouvertes devant vous, directement de l\'ostréiculteur. Rillettes de poisson maison, tartine, verre de blanc. Ambiance de port, authentique.',
-    tags: [{c:'top', l:'#4 Top 10'}, {c:'cabane', l:'Cabane producteur'}, {c:'mer', l:'Huitres directes'}],
-    dist: '5 min à pied depuis Villa Collette'
-  },
-  {
-    ll: [44.6820, -1.2139], n: 'Chai Anselme', sub: 'Le Canon · Immanquable #5',
-    desc: 'La référence du village du Canon. Terrasse sur le port, huîtres de producteur, tartines beurre maison, vin blanc frais. Village ostréicole pittoresque à souhait. Ambiance locale totale — pas un touriste de passage, des habitués.',
-    tags: [{c:'top', l:'#5 Top 10'}, {c:'cabane', l:'Cabane Canon'}, {c:'mer', l:'Huitres'}],
-    dist: '35 min vélo depuis Villa Collette'
-  },
-  {
-    ll: [44.6979, -1.2016], n: 'Emile et Une Huitre', sub: "L'Herbe · Immanquable #6",
-    desc: 'Minuscule cabane (quelques tables seulement), terrasse ombragée dans la ruelle du village de L\'Herbe. Vue sur le bassin, ambiance de carte postale. Les huîtres ouvrent devant vous. Arriver tôt, tables prises vite en juillet.',
-    tags: [{c:'top', l:'#6 Top 10'}, {c:'cabane', l:"Cabane L'Herbe"}, {c:'mer', l:'Huitres'}],
-    dist: '40 min vélo depuis Villa Collette'
-  },
-  {
-    ll: [44.6330, -1.2505], n: 'Le Bouchon du Ferret', sub: 'Cap Ferret village · Immanquable #7',
-    desc: 'Bistrot chaleureux du village. Tartare de poisson maison, filet de bar, rouget à la plancha. Cuisine traditionnelle revisitée, produits frais. Bon rapport qualité/prix, service humain. Idéal pour un dîner simple et bon sans se ruiner.',
-    tags: [{c:'top', l:'#7 Top 10'}, {c:'mer', l:'Tartare poisson'}, {c:'mer', l:'Bar plancha'}],
-    dist: '6 min à pied depuis Villa Collette'
-  },
-  {
-    ll: [44.7010, -1.2310], n: 'La Chapelle by Le Red Store', sub: 'Village du Four · Immanquable #8',
-    desc: 'Ancienne chapelle transformée en restaurant. Décoration soignée et sobre, belle terrasse, cuisine française créative. Grillades et tartares l\'été, belle carte des vins. Ouvert tous les jours midi et soir en juillet. Note 4.6/5.',
-    tags: [{c:'top', l:'#8 Top 10'}, {c:'mer', l:'Bistrot créatif'}, {c:'velo', l:'20 min vélo'}],
-    dist: '20 min vélo depuis Villa Collette'
-  },
-];
-top10.forEach(d => {
-  L.marker(d.ll, {icon: icon(d.n, 'top'), zIndexOffset: 600})
-    .bindPopup(pop(d.n, `${d.sub} · ${d.dist}`, d.desc, d.tags, null))
-    .addTo(groups.resto);
-});
+// TOP 10 (rouge plein)
+[
+  {ll:[44.6289,-1.2435],n:'Chez Hortense',sub:'La Pointe · #1 · 35 min vélo',
+   desc:'Institution depuis 1900, 4 générations. Moules au jambon à manger avec les doigts (recette transmise de génération en génération). Turbot plancha, poissons du jour. Vue directe sur la Dune du Pilat depuis la terrasse. Réserver impérativement en juillet.',
+   tags:[{c:'top',l:'#1 Top 10'},{c:'mer',l:'Moules jambon'},{c:'mer',l:'Turbot plancha'}],
+   route:'Piste cyclable bord de bassin vers le sud, 4 km plats. Ou à pied depuis la Conche du Mimbeau (15 min).'},
+  {ll:[44.6565,-1.2394],n:"L'Escale",sub:'Jetée Bélisaire · #2 · 3 min vélo',
+   desc:'Depuis 1950. Les pieds dans l\'eau, service continu sans réservation, ouvert 8h-22h30. Poissons grillés plancha, fruits de mer, huîtres. Coucher de soleil face à la Dune du Pilat. La Bodega de Marcel (bar tapas live music) juste à côté.',
+   tags:[{c:'top',l:'#2 Top 10'},{c:'mer',l:'Plancha'},{c:'mer',l:'Sans résa'}],
+   route:'300m plein nord depuis Villa Colette sur l\'allée principale. La jetée est face à vous.'},
+  {ll:[44.7138,-1.2113],n:'Pinasse Café',sub:'Grand Piquey · #3 · 25 min vélo',
+   desc:'Ancienne villa, terrasse vue bassin exceptionnelle. Grillades, poissons grillés, fruits de mer. Le restaurant le plus photogénique de la presqu\'île. Note 4.8/5 (3700+ avis).',
+   tags:[{c:'top',l:'#3 Top 10'},{c:'mer',l:'Vue bassin'},{c:'mer',l:'Grillades'}],
+   route:'Piste cyclable nord 9 km le long du bassin. Route plate et ombragée dans les pins.'},
+  {ll:[44.6458,-1.2458],n:'Chai Bertrand',sub:'Quartier pêcheurs · #4 · 8 min à pied',
+   desc:'Cabane ostréicole dans le quartier historique des pêcheurs. Huîtres ouvertes devant vous directement de l\'ostréiculteur. Rillettes maison, verre de blanc. Ambiance de port authentique.',
+   tags:[{c:'top',l:'#4 Top 10'},{c:'cab',l:'Producteur direct'},{c:'mer',l:'Huitres'}],
+   route:'600m à pied depuis Villa Colette. Longer la jetée vers le nord, tourner dans le quartier des pêcheurs.'},
+  {ll:[44.7005,-1.2292],n:'Chai Anselme',sub:'Le Canon · #5 · 30 min vélo',
+   desc:'La référence du village du Canon. Terrasse sur le port ostréicole, huîtres de producteur, tartines beurre maison. Village hors du temps, peu de touristes, très fréquenté par les locaux.',
+   tags:[{c:'top',l:'#5 Top 10'},{c:'cab',l:'Cabane Le Canon'},{c:'mer',l:'Huitres'}],
+   route:'Piste cyclable nord 11 km. Entrer dans Le Canon par la route de la jetée. Tout droit jusqu\'au port.'},
+  {ll:[44.6922,-1.2322],n:'Emile et Une Huitre',sub:"L'Herbe · #6 · 40 min vélo",
+   desc:'Minuscule cabane (quelques tables seulement), terrasse ombragée dans la plus belle ruelle de L\'Herbe. Huîtres ouvertes devant vous. Arriver tôt en juillet — tables prises vite.',
+   tags:[{c:'top',l:'#6 Top 10'},{c:'cab',l:"L'Herbe"},{c:'mer',l:'Huitres'}],
+   route:'Piste cyclable nord 13 km. Traverser Le Canon, continuer 2 km. Laisser le vélo au parking entrée du village (ruelle piétonne).'},
+  {ll:[44.6484,-1.2484],n:'Roc Seven',sub:'Cap Ferret village · #7 · 5 min à pied',
+   desc:'Rooftop avec vue directe sur le phare. Ouvert 2022. Cuisine variée (poissons, plancha), ambiance décontractée. Le meilleur point de vue du village pour déjeuner.',
+   tags:[{c:'top',l:'#7 Top 10'},{c:'mer',l:'Rooftop vue phare'}],
+   route:'400m à pied. 17 rue des Goélands, derrière le phare.'},
+  {ll:[44.6548,-1.2509],n:'Le Caillebotis',sub:'Cap Ferret · #8 · 5 min vélo',
+   desc:'Tenu par un ancien finaliste MasterChef. Cuisine maison soignée, produits frais, cocktails travaillés. Ambiance chaleureuse. Excellent pour un dîner décontracté et bon. 62 Avenue de l\'Océan.',
+   tags:[{c:'top',l:'#8 Top 10'},{c:'mer',l:'Produits frais'},{c:'mer',l:'MasterChef'}],
+   route:'5 min vélo vers le nord sur l\'Avenue de l\'Océan.'},
+  {ll:[44.7214,-1.2047],n:'La Dégust du Grand Coin',sub:'Petit Piquey · #9 · 20 min vélo',
+   desc:'Jean vous accueille d\'avril à octobre en bout de village, pieds dans l\'eau. Huîtres fraîches, vue bassin imprenable. Les meilleures huîtres de la presqu\'île selon les habitués.',
+   tags:[{c:'top',l:'#9 Top 10'},{c:'cab',l:'Producteur direct'},{c:'mer',l:'Vue bassin'}],
+   route:'Piste cyclable nord 7 km. Dans Petit Piquey, suivre l\'Impasse du Grand Coin jusqu\'au bout (bord du bassin).'},
+  {ll:[44.7427,-1.1825],n:"L'Auberge du Bassin",sub:'Claouey · #10 · 45 min vélo',
+   desc:'Chef Mélanie Serre (ancienne Robuchon). Sole du bassin, bar de ligne, homard breton. Belle cave à vins. Niveau plus gastronomique (75-150€) — à réserver pour une grande soirée.',
+   tags:[{c:'top',l:'#10 Top 10'},{c:'mer',l:'Chef Robuchon'},{c:'mer',l:'Vue bassin'}],
+   route:'Piste cyclable nord 17 km (long mais plat). Option : navette maritime depuis Bélisaire jusqu\'à Claouey.'},
+].forEach(d=>L.marker(d.ll,{icon:mk(d.n,'top'),zIndexOffset:1500}).bindPopup(pop(d.n,d.sub,d.desc,d.tags,d.route)).addTo(G.resto));
 
-// ══════════════════════════════════
-// CABANES OSTRÉICOLES (hors Top 10)
-// ══════════════════════════════════
-const cabanes = [
-  {
-    ll: [44.6820, -1.2134], n: 'Chez Larrarté', sub: 'Le Canon',
-    desc: 'Terrasse au coeur du village ostréicole du Canon. Fruits de mer, bistrot traditionnel. Terrasse vue bassin. Accueil familial depuis des années.',
-    tags: [{c:'cabane', l:'Cabane'}, {c:'mer', l:'Fruits de mer'}], dist: '35 min vélo'
-  },
-  {
-    ll: [44.6822, -1.2142], n: 'La Canfouine', sub: 'Le Canon',
-    desc: 'Authentique cabane spécialisée huîtres locales. Dans le coeur du village du Canon, ambiance ostréicole vraie.',
-    tags: [{c:'cabane', l:'Cabane'}, {c:'mer', l:'Huitres'}], dist: '35 min vélo'
-  },
-  {
-    ll: [44.6823, -1.2148], n: 'Chez Yannick', sub: 'Le Canon',
-    desc: 'Huîtres du Bassin d\'Arcachon. Ouvert toute l\'année. Accueil décontracté, esprit ostréiculteur.',
-    tags: [{c:'cabane', l:'Cabane'}], dist: '35 min vélo'
-  },
-  {
-    ll: [44.6979, -1.2020], n: 'Le Monte à Bord', sub: "L'Herbe",
-    desc: 'Sur le bord du bassin à L\'Herbe. Dégustation face à l\'eau, vue sur le Bassin. Village de carte postale.',
-    tags: [{c:'cabane', l:'Cabane'}, {c:'mer', l:'Vue bassin'}], dist: '40 min vélo'
-  },
-  {
-    ll: [44.6977, -1.2022], n: 'La Baraque à Huitres', sub: "L'Herbe",
-    desc: 'Simple et direct. Dégustation dans le village de L\'Herbe, ambiance de vacanciers locaux.',
-    tags: [{c:'cabane', l:'Cabane'}], dist: '40 min vélo'
-  },
-  {
-    ll: [44.6889, -1.2050], n: 'Cabane 24', sub: 'Piraillan',
-    desc: 'Pascal et Virginie Techoueyres. Pieds dans le sable, cadre familial, à deux pas de la plage. Ouvert avril-septembre. Dégustations huîtres directement du producteur.',
-    tags: [{c:'cabane', l:'Producteur'}, {c:'mer', l:'Huitres'}, {c:'velo', l:'Via réservoirs'}], dist: '30 min vélo'
-  },
-  {
-    ll: [44.6890, -1.2055], n: 'Cabane 57', sub: 'Piraillan',
-    desc: 'Baptême dégustation huîtres en famille possible. Atelier découverte. Idéal pour initier les enfants à l\'ostréiculture.',
-    tags: [{c:'cabane', l:'Cabane'}, {c:'mer', l:'Atelier famille'}], dist: '30 min vélo'
-  },
-  {
-    ll: [44.6718, -1.2218], n: 'Le Chai-Nous', sub: 'Grand Piquey',
-    desc: 'Pieds dans le sable à Grand Piquey. Cadre idyllique, face au bassin. Huîtres, vin blanc, soleil.',
-    tags: [{c:'cabane', l:'Cabane'}, {c:'mer', l:'Pieds sable'}], dist: '25 min vélo'
-  },
-  {
-    ll: [44.6305, -1.2480], n: 'La Cabane du Mimbeau', sub: 'Conche du Mimbeau, Cap Ferret',
-    desc: 'Face au bassin à la conche du Mimbeau. Huîtres fraîches, crevettes, bulots. Cadre paisible, moins fréquenté que la Douane. Vue sur la Dune du Pilat.',
-    tags: [{c:'cabane', l:'Cabane'}, {c:'mer', l:'Vue Dune'}], dist: '10 min à pied depuis Villa Collette'
-  },
-  {
-    ll: [44.6940, -1.2080], n: 'Le Petit Chenal', sub: 'Les Jacquets',
-    desc: 'Village discret et moins fréquenté. Dégustation d\'huîtres dans un cadre authentique, loin des circuits touristiques.',
-    tags: [{c:'cabane', l:'Cabane'}, {c:'nat', l:'Village discret'}], dist: '28 min vélo'
-  },
-];
-cabanes.forEach(d => {
-  L.marker(d.ll, {icon: icon(d.n, 'cabane'), zIndexOffset: 500})
-    .bindPopup(pop(d.n, `${d.sub} · ${d.dist}`, d.desc, d.tags, null))
-    .addTo(groups.resto);
-});
+// CABANES (orange)
+[
+  {ll:[44.6989,-1.2292],n:'Chez Larrarté',sub:'Rue Ste-Catherine, Le Canon',
+   desc:'Bistrot traditionnel avec terrasse au cœur du village du Canon. Fruits de mer, accueil familial depuis des années. Village ostréicole pittoresque.',
+   tags:[{c:'cab',l:'Cabane'},{c:'mer',l:'Fruits de mer'}]},
+  {ll:[44.7001,-1.2293],n:'La Canfouine',sub:'Le Canon',
+   desc:'Authentique cabane huîtres locales dans le Canon. Ambiance ostréicole vraie, clientèle de locaux.',
+   tags:[{c:'cab',l:'Cabane'},{c:'mer',l:'Huitres'}]},
+  {ll:[44.7003,-1.2298],n:'Cabane Reveleau',sub:'Le Canon',
+   desc:'Accueil chaleureux, village ostréicole. Bon déjeuner léger sur la terrasse.',
+   tags:[{c:'cab',l:'Cabane'}]},
+  {ll:[44.6928,-1.2321],n:'La Baraque à Huitres',sub:"L'Herbe",
+   desc:'Dégustation directe dans le village de L\'Herbe. Simple, sans chichi, vue bassin.',
+   tags:[{c:'cab',l:'Cabane'},{c:'mer',l:'Vue bassin'}]},
+  {ll:[44.6925,-1.2320],n:'Le Monte à Bord',sub:"L'Herbe · 104 Avenue",
+   desc:'Sur le bord du bassin à L\'Herbe. Dégustation face à l\'eau. Terrasse ombragée.',
+   tags:[{c:'cab',l:'Cabane'},{c:'mer',l:'Vue bassin'}]},
+  {ll:[44.6920,-1.2322],n:'Chez Guillaume',sub:"L'Herbe",
+   desc:'Dégustation huîtres face au bassin. Accueil simple et direct dans le village.',
+   tags:[{c:'cab',l:'Cabane'}]},
+  {ll:[44.7075,-1.2219],n:'Cabane 57',sub:'Piraillan · 40 Rue du Littoral',
+   desc:'Baptême dégustation huîtres en famille. Atelier découverte. Idéal pour initier les enfants à l\'ostréiculture.',
+   tags:[{c:'cab',l:'Cabane'},{c:'mer',l:'Famille'}]},
+  {ll:[44.7071,-1.2219],n:'Cabane 24',sub:'Piraillan · Techoueyres',
+   desc:'Pascal et Virginie. Pieds dans le sable, cadre familial. Ouvert avril-septembre. Producteur direct, huitres de leurs parcs.',
+   tags:[{c:'cab',l:'Producteur'},{c:'mer',l:'Pieds sable'}]},
+  {ll:[44.7144,-1.2107],n:'Le Chai-Nous',sub:'Grand Piquey',
+   desc:'Pieds dans le sable à Grand Piquey. Cadre idyllique face au bassin. Huîtres, vin blanc, soleil — l\'équation parfaite.',
+   tags:[{c:'cab',l:'Cabane'},{c:'mer',l:'Pieds sable'}]},
+  {ll:[44.6375,-1.2463],n:'La Cabane du Mimbeau',sub:'28 Av. de la Conche, Cap Ferret',
+   desc:'Face au bassin à la conche du Mimbeau. Huîtres fraîches, crevettes, bulots. Vue sur la Dune du Pilat. Ambiance plus calme que la Douane.',
+   tags:[{c:'cab',l:'Cabane'},{c:'mer',l:'Vue Dune Pilat'}]},
+  {ll:[44.7286,-1.1948],n:'Le Bout du Monde',sub:'Les Jacquets · Nord de la presqu\'île',
+   desc:'Village discret et peu fréquenté. Ambiance ultra-authentique, loin des circuits. Le nom dit tout — bout du bout de la presqu\'île.',
+   tags:[{c:'cab',l:'Cabane'},{c:'nat',l:'Village secret'}]},
+].forEach(d=>L.marker(d.ll,{icon:mk(d.n,'cabane'),zIndexOffset:1000}).bindPopup(pop(d.n,d.sub,d.desc,d.tags,null)).addTo(G.resto));
 
-// ══════════════════════════════════
-// AUTRES RESTAURANTS
-// ══════════════════════════════════
-const autres = [
-  {
-    ll: [44.6316, -1.2490], n: 'La Maison du Bassin', sub: 'Cap Ferret village',
-    desc: 'Chef Franck Le Bourlay (Maître restaurateur). Bar rôti, dorade, rouget, thon juste cuit. Foie gras landes, caviar de Gironde. Buffet desserts mythique, esprit maison de vacances. Cadre discret dans les pins.',
-    tags: [{c:'mer', l:'Maître restaurateur'}, {c:'mer', l:'Bistronomique'}], dist: '5 min à pied'
-  },
-  {
-    ll: [44.6314, -1.2492], n: 'La Cabane du Phare', sub: 'Près du phare, Cap Ferret',
-    desc: 'Cadre waterfront enchanteur à deux pas du phare. Cuisine maison axée poissons frais. Terrasse agréable. Plats honnêtes à 16-20€. Romantique et simple.',
-    tags: [{c:'mer', l:'Poissons frais'}, {c:'velo', l:'5 min vélo'}], dist: '5 min à pied'
-  },
-  {
-    ll: [44.6320, -1.2500], n: 'Java', sub: 'Cap Ferret village',
-    desc: 'Chef formé chez Joël Robuchon. Influences japonaises, orientales et méditerranéennes sur des produits du bassin. Belle sélection de vins. Pour une soirée un peu différente sans partir loin.',
-    tags: [{c:'mer', l:'Chef Robuchon'}, {c:'mer', l:'Fusion créative'}], dist: '4 min à pied'
-  },
-  {
-    ll: [44.6318, -1.2508], n: 'Mayzou', sub: 'Avenue Nord du Phare, Cap Ferret',
-    desc: 'Produits locaux et saisonniers, cuisine créative et légère. Cocktails signature maison. Décoration naturelle, terrasse végétale. Idéal pour finir une soirée tranquillement après une longue journée de vélo.',
-    tags: [{c:'mer', l:'Créatif local'}, {c:'mer', l:'Cocktails'}], dist: '6 min à pied'
-  },
-  {
-    ll: [44.7070, -1.2415], n: "L'Auberge du Bassin", sub: 'Claouey',
-    desc: 'Chef Mélanie Serre (ancienne Robuchon). Sole du bassin au fenouil braisé, homard breton, bar. Cave à vins soignée par son mari Bertrand. Vue bassin. Niveau plus gastronomique (75-150€), à réserver pour une soirée exceptionnelle.',
-    tags: [{c:'mer', l:'Chef Robuchon'}, {c:'mer', l:'Vue bassin'}], dist: '45 min vélo'
-  },
-  {
-    ll: [44.7005, -1.2320], n: "L'Auberge du Bassin (déj)", sub: 'Claouey — formule midi',
-    desc: 'Même chef, menu du midi plus accessible. Poissons et fruits de mer 100% maison. Un bon plan déjeuner lors de la balade vers L\'Herbe/Le Canon.',
-    tags: [{c:'mer', l:'Déjeuner local'}], dist: '45 min vélo'
-  },
-];
-autres.forEach(d => {
-  L.marker(d.ll, {icon: icon(d.n, 'resto'), zIndexOffset: 400})
-    .bindPopup(pop(d.n, `${d.sub} · ${d.dist}`, d.desc, d.tags, null))
-    .addTo(groups.resto);
-});
+// AUTRES RESTAURANTS (blanc/rouge)
+[
+  {ll:[44.6417,-1.2487],n:'La Cabane du Phare',sub:'Avenue du Phare, Cap Ferret',
+   desc:'Cadre enchanteur à deux pas du phare. Cuisine maison axée poissons frais. Terrasse agréable, plats 16-20€. Vue sur le bassin, romantique et simple.',
+   tags:[{c:'mer',l:'Poissons frais'},{c:'d',l:'16-20€'}]},
+  {ll:[44.6444,-1.2469],n:'La Maison du Bassin',sub:'Rue des Pionniers, Cap Ferret',
+   desc:'Chef Franck Le Bourlay (Maître restaurateur). Bar rôti, dorade, rouget, thon juste cuit. Buffet desserts mythique. Ambiance villa dans les pins. Pas gastronomique — bistronomique de qualité.',
+   tags:[{c:'mer',l:'Maître restaurateur'},{c:'mer',l:'Bistronomique'}]},
+  {ll:[44.6490,-1.2494],n:'Java',sub:'Cap Ferret village',
+   desc:'Chef formé chez Joël Robuchon. Influences japonaises et méditerranéennes sur des produits du bassin. Belle sélection de vins. Pour une soirée un peu différente des classiques.',
+   tags:[{c:'mer',l:'Chef Robuchon'},{c:'mer',l:'Fusion'}]},
+  {ll:[44.6486,-1.2486],n:'Mayzou',sub:'32 Av. Nord du Phare, Cap Ferret',
+   desc:'Cuisine locale créative et légère. Cocktails signature, terrasse végétale. Idéal pour finir une soirée tranquillement après une longue journée de vélo.',
+   tags:[{c:'mer',l:'Créatif local'},{c:'mer',l:'Cocktails'}]},
+  {ll:[44.6496,-1.2445],n:'Le Sail Fish',sub:'70 Bd de la Plage, Cap Ferret',
+   desc:'Restaurant côté plage Atlantique. Poissons frais, cocktails, vue océan. Ambiance plus festive que les cabanes. DJ certains soirs.',
+   tags:[{c:'mer',l:'Vue Océan'},{c:'mer',l:'Festif'}]},
+  {ll:[44.7328,-1.1902],n:'Les Pieds dans l\'Eau',sub:'Le Four',
+   desc:'Cabane ostréicole dans le village du Four. Huîtres directement du producteur, ambiance ultra-locale et sans touristes.',
+   tags:[{c:'cab',l:'Cabane'},{c:'nat',l:'Très local'}]},
+].forEach(d=>L.marker(d.ll,{icon:mk(d.n,'resto'),zIndexOffset:800}).bindPopup(pop(d.n,d.sub,d.desc,d.tags,null)).addTo(G.resto));
 
-// ══════════════════════════════════
-// BALADES & ACTIVITÉS
-// ══════════════════════════════════
-const balades = [
-  {
-    ll: [44.6290, -1.2480], n: 'Phare du Cap Ferret', sub: 'Activité · 5 min à pied',
-    desc: '258 marches pour 53 mètres de hauteur. Vue à 360° : Dune du Pilat, parcs ostréicoles, l\'Océan, la forêt des Landes. Adulte 7€, enfant 4€. Ouvert tous les jours en juillet. A faire au matin pour la lumière.',
-    tags: [{c:'nat', l:'Incontournable'}, {c:'dist', l:'5 min à pied'}, {c:'velo', l:'Accès vélo facile'}],
-    route: 'Depuis Villa Collette → rue du Phare vers le sud. 400m à pied. Garer le vélo au pied du phare.'
-  },
-  {
-    ll: [44.6388, -1.2468], n: 'Jetée Bélisaire + Coucher de soleil', sub: 'Site cult · 12 min vélo',
-    desc: 'Le point de rendez-vous de la presqu\'île. Vue directe sur la Dune du Pilat au coucher du soleil — orangé et or sur le Bassin. Départ des navettes maritimes vers Arcachon. L\'Escale est juste là pour un verre ou un repas les pieds dans l\'eau.',
-    tags: [{c:'nat', l:'Coucher de soleil'}, {c:'dist', l:'12 min vélo'}, {c:'mer', l:'Navette Arcachon'}],
-    route: 'Depuis Villa Collette → piste cyclable nord le long du bassin. Route plate, ombragée. 3 km.'
-  },
-  {
-    ll: [44.6979, -1.2016], n: "Village de L'Herbe", sub: 'Balade · 40 min vélo',
-    desc: 'Le village ostréicole le plus pittoresque du Bassin. Ruelles étroites, maisons en bois colorées, roses trémières, cabanes sur pilotis. Atmosphère hors du temps. 30 min de déambulation à pied dans le village. Déjeuner dans une cabane les pieds dans l\'eau.',
-    tags: [{c:'nat', l:'Village coup de cœur'}, {c:'dist', l:'40 min vélo'}, {c:'cabane', l:'Cabanes huitres'}],
-    route: 'Depuis Villa Collette → piste cyclable nord via Grand Piquey et Piraillan. 12 km, terrain plat, forêt de pins. Traverser le Canon avant L\'Herbe (arrêt Chai Anselme conseillé).'
-  },
-  {
-    ll: [44.6820, -1.2139], n: 'Village du Canon', sub: 'Balade · 35 min vélo',
-    desc: 'Port pittoresque avec cabanes colorées, terrasses au bord du bassin. Chai Anselme, La Canfouine, Chez Larrarté. Le village ostréicole le plus animé de la presqu\'île. Marché le matin en saison. Combinable avec L\'Herbe (5 min vélo).',
-    tags: [{c:'nat', l:'Village ostréicole'}, {c:'dist', l:'35 min vélo'}, {c:'cabane', l:'5 cabanes'}],
-    route: 'Depuis Villa Collette → piste cyclable nord (D106) en longeant le bassin. 11 km plats et ombragés. Relier ensuite L\'Herbe en 5 min de vélo vers le nord.'
-  },
-  {
-    ll: [44.6889, -1.2052], n: 'Réservoirs de Piraillan', sub: 'Nature · 30 min vélo',
-    desc: 'Site naturel protégé du Conservatoire du Littoral. Plans d\'eau salée, îlots boisés. Flamants roses, hérons cendrés, loutres, martres. 2 circuits pédestres de découverte. Visites guidées gratuites le mercredi en été. A combiner avec Cabane 24 pour le déjeuner.',
-    tags: [{c:'nat', l:'Nature protégée'}, {c:'dist', l:'30 min vélo'}, {c:'nat', l:'Flamants roses'}],
-    route: 'Depuis Villa Collette → piste cyclable nord jusqu\'à Piraillan. Parking Réservoirs en entrée de village. 10 km plats. Retour possible via Truc Vert (plage océan) + forêt de pins.'
-  },
-  {
-    ll: [44.7050, -1.1980], n: 'Plage de Truc Vert (côté Océan)', sub: 'Plage sauvage · 45 min vélo',
-    desc: 'La plus belle et la moins fréquentée des plages océan de la presqu\'île. Dunes sauvages, forêt de pins jusqu\'à la mer. Vélo autorisé sur le sable mouillé du lever du soleil jusqu\'à 11h (15/06-15/09). Houle post-épisode météo spectaculaire.',
-    tags: [{c:'nat', l:'Plage sauvage'}, {c:'dist', l:'45 min vélo'}, {c:'velo', l:'Sable mouillé avant 11h'}],
-    route: 'Depuis Villa Collette → piste cyclable nord jusqu\'à Piraillan → traversée de la forêt via les Réservoirs vers l\'Océan. 13 km. Route ombragée dans les pins, terrain plat. Retour possible via L\'Herbe.'
-  },
-];
-balades.forEach(d => {
-  L.marker(d.ll, {icon: icon(d.n, 'balade'), zIndexOffset: 300})
-    .bindPopup(pop(d.n, d.sub, d.desc, d.tags, d.route))
-    .addTo(groups.balade);
-});
+// BALADES (vert)
+[
+  {ll:[44.6459,-1.2488],n:'Phare du Cap Ferret',sub:'5 min à pied · 7€ adulte',
+   desc:'258 marches, 53 m. Vue 360° sur la Dune du Pilat, l\'Océan, les parcs ostréicoles et la forêt des Landes. Adulte 7€, enfant 4€. Ouvert tous les jours en juillet. Meilleur moment : tôt le matin pour la lumière.',
+   tags:[{c:'nat',l:'Vue 360°'},{c:'d',l:'5 min à pied'},{c:'d',l:'7€ adulte'}],
+   route:'Depuis Villa Colette → 400m à pied direction village. Le phare est visible de partout.'},
+  {ll:[44.6563,-1.2369],n:'Jetée Bélisaire — coucher de soleil',sub:'3 min vélo · Gratuit',
+   desc:'Le rendez-vous quotidien de la presqu\'île. Vue sur la Dune du Pilat en orangé et doré au coucher du soleil. Départ navettes maritimes vers Arcachon (7€/adulte, vélos acceptés, toutes les heures 7h-23h). L\'Escale à 50 mètres.',
+   tags:[{c:'nat',l:'Coucher soleil'},{c:'mer',l:'Navette Arcachon'},{c:'d',l:'3 min vélo'}],
+   route:'300m plein nord depuis Villa Colette sur l\'allée principale.'},
+  {ll:[44.6917,-1.2333],n:"Village de L'Herbe",sub:'40 min vélo · 13 km aller',
+   desc:'Le village ostréicole le plus pittoresque du Bassin. Ruelles étroites, maisons en bois colorées, roses trémières, cabanes sur pilotis. Atmosphère hors du temps. 1h minimum sur place. Déjeuner dans une cabane les pieds dans l\'eau.',
+   tags:[{c:'nat',l:'Village incontournable'},{c:'d',l:'13 km · 40 min'},{c:'cab',l:'5 cabanes'}],
+   route:'Piste cyclable nord le long du bassin. Traverser Le Canon (arrêt conseillé Chai Anselme), puis 2 km vers L\'Herbe. Laisser vélo au parking entrée — ruelle piétonne.'},
+  {ll:[44.7005,-1.2307],n:'Village du Canon',sub:'30 min vélo · 11 km aller',
+   desc:'Port pittoresque, terrasses bord du bassin, 5 cabanes ostréicoles. Le village le plus animé de la presqu\'île en juillet. Marché le matin. Combinable avec L\'Herbe (5 min vélo au nord).',
+   tags:[{c:'nat',l:'Village ostréicole'},{c:'d',l:'11 km · 30 min'},{c:'cab',l:'5 cabanes'}],
+   route:'Piste cyclable nord le long du bassin (D106), 11 km plats et ombragés. Entrer dans Le Canon par la route de la jetée.'},
+  {ll:[44.7109,-1.2213],n:'Réservoirs de Piraillan',sub:'28 min vélo · 10 km · Gratuit',
+   desc:'Site naturel protégé (Conservatoire du Littoral). Plans d\'eau salée, îlots boisés. Flamants roses, hérons cendrés, loutres. 2 circuits pédestres. Visites guidées gratuites le mercredi en été. Combiner avec Cabane 24 pour le déjeuner.',
+   tags:[{c:'nat',l:'Nature protégée'},{c:'nat',l:'Flamants roses'},{c:'d',l:'10 km · 28 min'}],
+   route:'Piste cyclable nord jusqu\'à Piraillan (10 km). Les réservoirs sont à l\'entrée du village côté bassin. Garer le vélo au parking.'},
+  {ll:[44.7141,-1.2400],n:'Plage de Truc Vert',sub:'45 min vélo · 14 km · Plage sauvage',
+   desc:'La plus belle plage océan de la presqu\'île. Dunes sauvages, forêt de pins jusqu\'à la mer. Très peu fréquentée comparée aux plages du village. Vélo autorisé sur sable mouillé du lever du soleil jusqu\'à 11h.',
+   tags:[{c:'nat',l:'Plage sauvage'},{c:'velo',l:'Sable mouillé avant 11h'},{c:'d',l:'14 km · 45 min'}],
+   route:'Piste nord jusqu\'à Piraillan (10 km), puis traversée forêt de pins vers l\'Océan (4 km). Bien balisé, ombragé.'},
+  {ll:[44.6289,-1.2435],n:'Pointe du Cap — La Conche du Mimbeau',sub:'12 min vélo · 4 km aller',
+   desc:'Pointe extrême de la presqu\'île. Vue sur la Dune du Pilat face à face. La conche du Mimbeau côté bassin, la grande plage Atlantique côté océan. Chez Hortense à 200m. L\'endroit le plus sauvage du Cap.',
+   tags:[{c:'nat',l:'Bout de presqu\'île'},{c:'mer',l:'Vue Dune Pilat'},{c:'d',l:'4 km · 12 min'}],
+   route:'Piste cyclable sud le long du bassin, 4 km plats depuis Villa Colette.'},
+  {ll:[44.6521,-1.2437],n:'Tour du village à vélo',sub:'1h · 4 km · Balade d\'arrivée',
+   desc:'Parfait pour le premier jour. Quartier ostréicole de la Douane, conche du Mimbeau, phare, plage Atlantique, port. Tour complet du village en 1h, terrain plat.',
+   tags:[{c:'velo',l:'Circuit village'},{c:'d',l:'4 km · 1h'}],
+   route:'Depuis Villa Colette → phare → quartier Douane/pêcheurs → conche du Mimbeau → plage Atlantique → retour. Boucle 4 km plate.'},
+  {ll:[44.6563,-1.2369],n:'Traversée en navette — Arcachon',sub:'3 min vélo jusqu\'à la jetée · 7€ adulte',
+   desc:'30 min de traversée en bateau depuis Bélisaire vers Arcachon. Vue panoramique sur le Bassin. Vélos acceptés (+5.50€). Toutes les heures 7h-23h. Incontournable pour la journée Arcachon.',
+   tags:[{c:'mer',l:'Navette maritime'},{c:'d',l:'7€ adulte · +5.50€ vélo'}],
+   route:'3 min vélo depuis Villa Colette jusqu\'à la jetée Bélisaire. Navette toutes les heures. Prévoir le dernier retour avant 23h.'},
+  {ll:[44.7109,-1.2213],n:'Grande boucle Piraillan–Truc Vert–L\'Herbe',sub:'Demi-journée · ~25 km · 3h',
+   desc:'Le circuit vélo signature de la presqu\'île. Piraillan et ses réservoirs, traversée forêt vers Truc Vert (plage océan), retour par L\'Herbe et Le Canon. Villages, nature et eau — tout en un seul circuit.',
+   tags:[{c:'velo',l:'Circuit complet'},{c:'d',l:'~25 km · 3h'},{c:'nat',l:'Forêt + Océan + Bassin'}],
+   route:'Nord sur la piste bassin jusqu\'aux Réservoirs (10 km) → traversée forêt vers Truc Vert (4 km) → retour L\'Herbe (2 km) → Le Canon (2 km) → piste bassin retour (11 km).'},
+  {ll:[44.6917,-1.2333],n:'Randonnée Prés Salés d\'Arès',sub:'Depuis Arès · 12 km à pied · 3h30',
+   desc:'Depuis Arès (au nord), sentier 12 km à travers la Réserve Naturelle des Prés Salés jusqu\'à Claouey. Loutres, flamants, avocettes. Visites guidées gratuites le mercredi. Idéal si vous avez une voiture pour aller à Arès.',
+   tags:[{c:'nat',l:'Réserve naturelle'},{c:'d',l:'12 km à pied · 3h30'},{c:'nat',l:'Faune sauvage'}],
+   route:'En voiture jusqu\'à Arès (20 km au nord de Cap Ferret). Départ du port ostréicole. Sentier balisé vers le sud jusqu\'à Claouey. Retour en navette maritime possible.'},
+  {ll:[44.6565,-1.2394],n:'Vélo côté bassin — balade du matin',sub:'Balade libre · Durée au choix',
+   desc:'Longer le bassin à vélo du matin, de la jetée Bélisaire vers le nord. Route plate, vues sur l\'eau et la Dune du Pilat, villages ostréicoles qui s\'enchaînent. Faire demi-tour quand on veut. La balade signature de la presqu\'île.',
+   tags:[{c:'velo',l:'Balade libre'},{c:'nat',l:'Vue bassin continue'}],
+   route:'Depuis Villa Colette → direction nord sur la piste du bassin. Jusqu\'à L\'Herbe = 13 km aller. Jusqu\'au Canon = 11 km. Aller-retour canon en 2h avec arrêt huîtres.'},
+].forEach(d=>L.marker(d.ll,{icon:mk(d.n,'balade'),zIndexOffset:500}).bindPopup(pop(d.n,d.sub,d.desc,d.tags,d.route||null)).addTo(G.balade));
 
-// ── AJOUTER SUR LA CARTE ──
-Object.values(groups).forEach(g => g.addTo(map));
+Object.values(G).forEach(g=>g.addTo(map));
+const pts=[];
+Object.values(G).forEach(g=>g.eachLayer(l=>{if(l.getLatLng)pts.push(l.getLatLng())}));
+if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.05));
 
-// Fit bounds
-const pts = [];
-Object.values(groups).forEach(g => g.eachLayer(l => { if (l.getLatLng) pts.push(l.getLatLng()); }));
-if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.06));
-
-// ── TOGGLE FILTRES ──
-function toggleGroup(name) {
-  state[name] = !state[name];
-  if (state[name]) groups[name].addTo(map);
-  else map.removeLayer(groups[name]);
-  const btn = document.getElementById('btn-' + name);
-  btn.classList.toggle('active', state[name]);
+function toggle(n){
+  ST[n]=!ST[n];
+  ST[n]?G[n].addTo(map):map.removeLayer(G[n]);
+  document.getElementById('btn-'+n).classList.toggle('on',ST[n]);
 }
 </script>
 </body>
